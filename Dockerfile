@@ -11,7 +11,8 @@ RUN curl -L -o filebot.deb https://get.filebot.net/filebot/FileBot_${FILEBOT_VER
 FROM debian:10.10-slim
 
 ENV FILEBOT_INPUT_DIR=/input \
-    FILEBOT_OUTPUT_DIR=/output
+    FILEBOT_OUTPUT_DIR=/output \
+    FILEBOT_LICENCE=/config/filebot.psm
 
 COPY --from=downloader /home/curl_user/filebot.deb /tmp/
 
