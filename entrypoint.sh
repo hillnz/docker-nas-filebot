@@ -22,6 +22,7 @@ while true; do
             --def unsorted=y \
             --def movieFormat="{plex}" seriesFormat="{plex}" \
             --def excludeList=$FILEBOT_PROCESSED \
+            --def ignore=incomplete/
             "$FILEBOT_INPUT_DIR"
     fi
 
