@@ -14,6 +14,20 @@ while true; do
     find "$FILEBOT_INPUT_DIR" -type f > $INCOMING_LIST_TMP
     touch $INCOMING_LIST
     if ! cmp --silent $INCOMING_LIST $INCOMING_LIST_TMP; then
+
+        # wait for files to stop changing
+        files=""
+        while true; do
+            echo "Waiting for files to stop changing..."
+            new_files="$(find "$FILEBOT_INPUT_DIR" -type f -print0 | xargs -0 stat -c '%n %Y')"
+            if [ "$files" != "$new_files" ]; then
+                files="$new_files"
+                sleep 5
+            else
+                break
+            fi
+        done
+
         filebot -script fn:amc \
             --output "${FILEBOT_OUTPUT_DIR}" \
             --action duplicate \
