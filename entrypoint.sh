@@ -4,8 +4,11 @@ export INCOMING_LIST=/tmp/incoming.txt
 export INCOMING_LIST_TMP=$INCOMING_LIST.tmp
 export FILEBOT_PROCESSED=/tmp/amc.txt
 
+chown -R filebot:filebot /config
+chown -R filebot:filebot "$FILEBOT_OUTPUT_DIR"
+
 if [ ! -d "/config/.filebot" ] && [ -f "${FILEBOT_LICENCE_FILE}" ]; then
-    filebot --license "${FILEBOT_LICENCE_FILE}"
+    gosu filebot filebot --license "${FILEBOT_LICENCE_FILE}"
 fi
 
 while true; do
@@ -28,7 +31,7 @@ while true; do
             fi
         done
 
-        filebot -script fn:amc \
+        gosu filebot filebot -script fn:amc \
             --output "${FILEBOT_OUTPUT_DIR}" \
             --action duplicate \
             -non-strict \

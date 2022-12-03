@@ -14,6 +14,9 @@ ENV FILEBOT_INPUT_DIR=/input \
     FILEBOT_OUTPUT_DIR=/output \
     FILEBOT_LICENCE=/config/filebot.psm
 
+RUN apt-get update && apt-get install -y \
+    gosu
+
 COPY --from=downloader /home/curl_user/filebot.deb /tmp/
 
 # HACK workaround jre install bug https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=863199#23
@@ -26,6 +29,5 @@ RUN mkdir -p /usr/share/man/man1 && \
 COPY entrypoint.sh /entrypoint.sh
 
 RUN groupadd -r filebot && useradd --no-log-init -r -m -d /config -g filebot filebot
-USER filebot
 
 ENTRYPOINT [ "./entrypoint.sh" ]
