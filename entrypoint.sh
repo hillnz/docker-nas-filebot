@@ -36,7 +36,7 @@ while true; do
 
         gosu filebot filebot -script fn:amc \
             --output "${FILEBOT_OUTPUT_DIR}" \
-            --action duplicate \
+            --action "$FILEBOT_ACTION" \
             -non-strict \
             --conflict auto \
             --def unsorted=y \
