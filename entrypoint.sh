@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
+set -e
+
 export INCOMING_LIST=/tmp/incoming.txt
 export INCOMING_LIST_TMP=$INCOMING_LIST.tmp
 export FILEBOT_PROCESSED=/tmp/amc.txt
+export FILEBOT_ACTION=${FILEBOT_ACTION:-duplicate}
 
 chown -R filebot:filebot /config
 chown -R filebot:filebot "$FILEBOT_OUTPUT_DIR"
