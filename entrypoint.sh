@@ -44,6 +44,10 @@ while true; do
             --def excludeList=$FILEBOT_PROCESSED \
             --def ignore=incomplete/ \
             "$FILEBOT_INPUT_DIR"
+
+        if [ "$CLEANUP_AFTER_PROCESSING" = "true" ]; then
+            find "$FILEBOT_INPUT_DIR" -type f -delete
+        fi
     fi
 
     mv $INCOMING_LIST_TMP $INCOMING_LIST
