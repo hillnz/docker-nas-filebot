@@ -5,7 +5,7 @@ ARG TARGETPLATFORM
 WORKDIR /home/curl_user
 
 # renovate: datasource=repology depName=homebrew_casks/FileBot
-ARG FILEBOT_VERSION=4.9.3
+ARG FILEBOT_VERSION=5.0.3
 RUN curl -L -o filebot.deb https://get.filebot.net/filebot/FileBot_${FILEBOT_VERSION}/FileBot_${FILEBOT_VERSION}_universal.deb
 
 FROM debian:12.0-slim
