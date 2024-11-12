@@ -8,7 +8,7 @@ WORKDIR /home/curl_user
 ARG FILEBOT_VERSION=5.1.3
 RUN curl -L -o filebot.deb https://get.filebot.net/filebot/FileBot_${FILEBOT_VERSION}/FileBot_${FILEBOT_VERSION}_universal.deb
 
-FROM debian:12.7-slim
+FROM debian:12.8-slim
 
 ENV FILEBOT_INPUT_DIR=/input \
     FILEBOT_OUTPUT_DIR=/output \
