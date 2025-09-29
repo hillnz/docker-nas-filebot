@@ -4,7 +4,7 @@ set -e
 
 export INCOMING_LIST=/tmp/incoming.txt
 export INCOMING_LIST_TMP=$INCOMING_LIST.tmp
-export FILEBOT_PROCESSED=/tmp/amc.txt
+export FILEBOT_PROCESSED=/config/amc.txt
 export FILEBOT_ACTION=${FILEBOT_ACTION:-duplicate}
 
 chown -R filebot:filebot /config
@@ -13,6 +13,22 @@ chown -R filebot:filebot "$FILEBOT_OUTPUT_DIR"
 if [ ! -d "/config/.filebot" ] && [ -f "${FILEBOT_LICENCE_FILE}" ]; then
     gosu filebot filebot --license "${FILEBOT_LICENCE_FILE}"
 fi
+
+# Function to clean up the FILEBOT_PROCESSED file by removing non-existent files
+cleanup_processed_file() {
+    if [ -f "$FILEBOT_PROCESSED" ]; then
+        local temp_file
+        temp_file=$(mktemp)
+        while IFS= read -r line; do
+            # Skip empty lines and check if file exists
+            if [ -n "$line" ] && [ -f "$line" ]; then
+                echo "$line" >> "$temp_file"
+            fi
+        done < "$FILEBOT_PROCESSED"
+        mv "$temp_file" "$FILEBOT_PROCESSED"
+        echo "Cleaned up processed file list: $(wc -l < "$FILEBOT_PROCESSED") files remaining"
+    fi
+}
 
 while true; do
     sleep 63s
@@ -44,6 +60,9 @@ while true; do
             --def excludeList=$FILEBOT_PROCESSED \
             --def ignore=incomplete/ \
             "$FILEBOT_INPUT_DIR"
+
+        # Clean up the processed file list to remove non-existent files
+        cleanup_processed_file
 
         if [ "$CLEANUP_AFTER_PROCESSING" = "true" ]; then
             find "$FILEBOT_INPUT_DIR" -type f -delete
