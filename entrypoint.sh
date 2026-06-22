@@ -59,7 +59,7 @@ while true; do
             --def movieFormat="{plex}" seriesFormat="{plex}" \
             --def excludeList=$FILEBOT_PROCESSED \
             --def ignore=incomplete/ \
-            "$FILEBOT_INPUT_DIR"
+            "$FILEBOT_INPUT_DIR" || true  # amc exits non-zero when nothing matched; don't let set -e kill the loop
 
         # Clean up the processed file list to remove non-existent files
         cleanup_processed_file
