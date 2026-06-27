@@ -26,6 +26,10 @@ cleanup_processed_file() {
             fi
         done < "$FILEBOT_PROCESSED"
         mv "$temp_file" "$FILEBOT_PROCESSED"
+        # mktemp creates the file as root:root 0600; without this the exclude list
+        # becomes unreadable to the unprivileged filebot user, so the next amc run
+        # aborts with "Failed to read excludes: ... AccessDeniedException".
+        chown filebot:filebot "$FILEBOT_PROCESSED"
         echo "Cleaned up processed file list: $(wc -l < "$FILEBOT_PROCESSED") files remaining"
     fi
 }
