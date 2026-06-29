@@ -12,16 +12,22 @@ env:
   DOCKER_REPO: jonoh/nas-filebot
 
 jobs:
-  main:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
     steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -33,10 +39,62 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
+      - name: Build and push by digest
+        id: docker_build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          cache-from: type=gha,scope=${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=${{ env.PLATFORM_PAIR }}
+          outputs: ${{ github.ref == 'refs/heads/main' && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', env.DOCKER_REPO) || 'type=cacheonly' }}
+
+      - name: Export digest
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest="${{ steps.docker_build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: Bump version and push tag
         id: create_tag
         uses: mathieudutour/github-tag-action@v6.2
-        if: ${{ github.ref == 'refs/heads/main' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_annotated_tag: true
@@ -46,23 +104,17 @@ jobs:
         env:
           NEW_TAG: ${{ steps.create_tag.outputs.new_tag }}
         run: |
-          echo "::set-output name=DOCKER_TAG::$([ "$NEW_TAG" = "" ] && echo test || echo "$NEW_TAG")"
+          echo "DOCKER_TAG=$([ "$NEW_TAG" = "" ] && echo test || echo "$NEW_TAG")" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max          
-          push: ${{ github.ref == 'refs/heads/main' }}
-          tags: "${{ env.DOCKER_REPO }}:${{ steps.docker_tag.outputs.DOCKER_TAG }}"
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create \
+            -t "${{ env.DOCKER_REPO }}:${{ steps.docker_tag.outputs.DOCKER_TAG }}" \
+            $(printf '${{ env.DOCKER_REPO }}@sha256:%s ' *)
 
       - name: Update repo description
         uses: peter-evans/dockerhub-description@v5
-        if: ${{ github.ref == 'refs/heads/main' }}
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
