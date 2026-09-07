@@ -60,6 +60,7 @@ while true; do
             -non-strict \
             --conflict auto \
             --def unsorted=y \
+            --def movieDB=TheMovieDB seriesDB=TheMovieDB::TV \
             --def movieFormat="{plex}" seriesFormat="{plex}" \
             --def excludeList=$FILEBOT_PROCESSED \
             --def ignore=incomplete/ \
