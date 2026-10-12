@@ -54,6 +54,7 @@ while true; do
             fi
         done
 
+        # Use {jellyfin} to include the year
         gosu filebot filebot -script fn:amc \
             --output "${FILEBOT_OUTPUT_DIR}" \
             --action "$FILEBOT_ACTION" \
@@ -61,7 +62,7 @@ while true; do
             --conflict auto \
             --def unsorted=y \
             --def movieDB=TheMovieDB seriesDB=TheMovieDB::TV \
-            --def movieFormat="{plex}" seriesFormat="{plex}" \
+            --def movieFormat="{plex}" seriesFormat="{jellyfin}" \
             --def excludeList=$FILEBOT_PROCESSED \
             --def ignore=incomplete/ \
             "$FILEBOT_INPUT_DIR" || true  # amc exits non-zero when nothing matched; don't let set -e kill the loop
